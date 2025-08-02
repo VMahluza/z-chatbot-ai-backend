@@ -3,3 +3,5 @@ channels>=4.0
 channels-redis>=4.0
 daphne>=4.0
 django-cors-headers>=4.0
+python-dotenv
+zai-sdk

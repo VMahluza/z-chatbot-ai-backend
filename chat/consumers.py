@@ -1,6 +1,8 @@
 import json
 from channels.generic.websocket import AsyncWebsocketConsumer
 
+from .clients import get_ai_response
+
 
 class ChatConsumer(AsyncWebsocketConsumer):
     async def connect(self):
@@ -19,10 +21,10 @@ class ChatConsumer(AsyncWebsocketConsumer):
             message = text_data_json.get('message', '')
             
             print(f"Received message: {message}")
-            
-            # Simple echo response for now - you can integrate with AI here
-            response = f"Echo: {message}"
-            
+
+            # Get AI response
+            response = await get_ai_response(message)
+
             # Send response back to WebSocket
             await self.send(text_data=json.dumps({
                 'response': response
