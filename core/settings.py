@@ -29,7 +29,7 @@ SECRET_KEY = "django-insecure-p7%goq5@(ck9h57rl*y06&4_7v4&i4(v1vf2m66gn1a9jmidcq
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = ["localhost", "127.0.0.1", "*"]
+ALLOWED_HOSTS = ["localhost", "127.0.0.1", "*", "tired-lions-buy.loca.lt"]
 
 
 
@@ -136,6 +136,7 @@ DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 CORS_ALLOWED_ORIGINS = [
     "http://localhost:3000",
     "http://127.0.0.1:3000",
+    "https://tired-lions-buy.loca.lt"
 ]
 
 # Also add these additional CORS settings for GraphQL
