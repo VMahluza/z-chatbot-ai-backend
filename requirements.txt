@@ -5,3 +5,6 @@ daphne>=4.0
 django-cors-headers>=4.0
 python-dotenv
 zai-sdk
+graphene-django
+django-graphql-jwt
+djangorestframework

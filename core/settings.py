@@ -45,6 +45,9 @@ INSTALLED_APPS = [
     "django.contrib.staticfiles",
     'corsheaders',
     "channels",
+    'django_filters',
+    "graphene_django",
+    "authentication",
     "chat",
 ]
 
@@ -136,7 +139,7 @@ DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 CORS_ALLOWED_ORIGINS = [
     "http://localhost:3000",
     "http://127.0.0.1:3000",
-    "https://tired-lions-buy.loca.lt"
+    
 ]
 
 # Also add these additional CORS settings for GraphQL
@@ -202,3 +205,26 @@ AI_SYSTEM_CONTENT = (
 
     "Always remember: you are Victor’s voice in digital form. Teach, inspire, and build — like he does."
 )
+
+
+# Graphene settings
+GRAPHENE = {
+    'SCHEMA': 'core.schema.schema',  # You will create this schema file later
+    'MIDDLEWARE': [
+        'graphql_jwt.middleware.JSONWebTokenMiddleware',
+    ],
+}
+
+# Authentication backends
+AUTHENTICATION_BACKENDS = [
+    'graphql_jwt.backends.JSONWebTokenBackend',
+    'django.contrib.auth.backends.ModelBackend',
+]
+
+AUTH_USER_MODEL = "authentication.User"
+
+# CSRF settings
+CSRF_TRUSTED_ORIGINS = [
+    "http://localhost:3000",
+    "http://127.0.0.1:3000",
+]

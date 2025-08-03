@@ -1,7 +1,7 @@
 import json
 from channels.generic.websocket import AsyncWebsocketConsumer
 
-from .clients import get_ai_response
+from .service import get_ai_response
 
 
 class ChatConsumer(AsyncWebsocketConsumer):
