@@ -62,7 +62,7 @@ def get_bot_user() -> User | None:
 
     
 async def save_chat_message(user: User, bot: User, user_message: str, ai_text: str):
-    """Save the chat message to the database."""
+    """Save the chat message to the database and return (conversation, user_msg, bot_msg)."""
 
 
     # Conversation
@@ -86,3 +86,4 @@ async def save_chat_message(user: User, bot: User, user_message: str, ai_text: s
     )
 
     print(f"Saved messages: User - {user_msg.content}, Bot - {bot_msg.content}")
+    return conversation, user_msg, bot_msg

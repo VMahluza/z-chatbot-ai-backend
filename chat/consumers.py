@@ -1,6 +1,8 @@
 import json
 import urllib.parse
 import jwt
+from channels.db import database_sync_to_async
+from channels.layers import get_channel_layer
 from channels.generic.websocket import AsyncWebsocketConsumer
 from asgiref.sync import sync_to_async
 from authentication.models import User
@@ -28,11 +30,31 @@ class ChatConsumer(AsyncWebsocketConsumer):
             f"[WS CONNECT] user={getattr(user, 'id', None)} is_authenticated={getattr(user, 'is_authenticated', False)}"
         )
         await self.accept()
+        # Add to user-specific channel group for multi-tab sync
+        if getattr(user, 'is_authenticated', False):
+            self.group_name = f"user_{user.id}"
+            await self.channel_layer.group_add(self.group_name, self.channel_name)
+            # Send last N messages history
+            history = await self._get_recent_messages(user, limit=20)
+            await self.send(json.dumps({
+                'type': 'history',
+                'messages': [
+                    {
+                        'id': str(m.id),
+                        'content': m.content,
+                        'sender': getattr(m.sender, 'username', 'unknown'),
+                        'timestamp': m.timestamp.isoformat(),
+                    } for m in history
+                ]
+            }))
         await self.send(json.dumps({"info": "Connected"}))
 
     async def disconnect(self, close_code):
         """Handle WebSocket disconnection"""
         print(f"WebSocket disconnected with code: {close_code}")
+        user: User = self.scope.get('user')
+        if getattr(user, 'is_authenticated', False) and hasattr(self, 'group_name'):
+            await self.channel_layer.group_discard(self.group_name, self.channel_name)
 
     async def receive(self, text_data):
         """Receive message from WebSocket"""
@@ -69,13 +91,28 @@ class ChatConsumer(AsyncWebsocketConsumer):
 
             sender: User = user  # already validated
 
-            # Get AI response
-            response = await get_ai_response(user_message= message, user=sender)
+            # Get AI response (persisted)
+            response = await get_ai_response(user=sender, user_message=message)
 
-            # Send response back to WebSocket
-            await self.send(text_data=json.dumps({
-                'response': response
-            }))
+            # Broadcast user message then AI response to group (re-fetch persisted messages not necessary here)
+            if hasattr(self, 'group_name'):
+                await self.channel_layer.group_send(self.group_name, {
+                    'type': 'chat.message',
+                    'payload': {
+                        'kind': 'user',
+                        'content': message,
+                    }
+                })
+                await self.channel_layer.group_send(self.group_name, {
+                    'type': 'chat.message',
+                    'payload': {
+                        'kind': 'bot',
+                        'content': response,
+                    }
+                })
+            else:
+                # Fallback directly to sender
+                await self.send(text_data=json.dumps({'response': response}))
             
         except json.JSONDecodeError:
             # Handle invalid JSON
@@ -126,3 +163,16 @@ class ChatConsumer(AsyncWebsocketConsumer):
         except Exception as e:  # pragma: no cover
             print(f"[WS AUTH] Token decode failed: {e}")
             return None, "Token decode failure"
+
+    async def chat_message(self, event):  # type: ignore
+        payload = event.get('payload', {})
+        await self.send(json.dumps({'type': 'message', **payload}))
+
+    @database_sync_to_async
+    def _get_recent_messages(self, user: User, limit: int = 20):
+        from chat.models import Message, Conversation
+        # Latest active conversation
+        conv = Conversation.objects.filter(user=user, is_active=True).order_by('-updated_at').first()
+        if not conv:
+            return []
+        return list(Message.objects.filter(conversation=conv).order_by('-timestamp')[:limit][::-1])
