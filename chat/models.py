@@ -37,7 +37,7 @@ class Message(models.Model):
     
     SENDER_CHOICES = [
         ('USER', 'User'),
-        ('AI', 'AI Assistant'),
+        ('BOT', 'Bot'),
         ('SYSTEM', 'System'),
     ]
     
@@ -58,12 +58,7 @@ class Message(models.Model):
     timestamp = models.DateTimeField(auto_now_add=True)
     is_edited = models.BooleanField(default=False)
     edited_at = models.DateTimeField(null=True, blank=True)
-    
-    # For AI responses
-    ai_model = models.CharField(max_length=100, blank=True, null=True)  # e.g., "gpt-4", "claude-3"
-    response_time = models.FloatField(null=True, blank=True)  # Response time in seconds
-    token_count = models.IntegerField(null=True, blank=True)  # Token usage
-    
+
     class Meta:
         ordering = ['timestamp']
         verbose_name = 'Message'
@@ -72,11 +67,6 @@ class Message(models.Model):
     def __str__(self):
         return f"{self.sender}: {self.content[:50]}..."
     
-    def save(self, *args, **kwargs):
-        # Update conversation's updated_at when message is saved
-        super().save(*args, **kwargs)
-        self.conversation.save(update_fields=['updated_at'])
-
 
 class MessageReaction(models.Model):
     """Model for user reactions to messages (like, dislike, etc.)"""

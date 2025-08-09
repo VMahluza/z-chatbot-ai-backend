@@ -206,6 +206,7 @@ AI_SYSTEM_CONTENT = (
     "Always remember: you are Victor’s voice in digital form. Teach, inspire, and build — like he does."
 )
 
+AI_BOT_NAME = "Z-Chatbot"
 
 # Graphene settings
 GRAPHENE = {
