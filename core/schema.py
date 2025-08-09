@@ -1,28 +1,22 @@
-# Queries
 import graphene
 import graphql_jwt
 
-from authentication.models import User
-from authentication.schema import RegisterUser, UserType
+from authentication.schema.mutations.register_user import RegisterUser
+from authentication.schema.queries.me import MeQuery
+from authentication.schema.queries.user_by_id import UserByIdQuery
+from chat.schema import ConversationListQuery, MessagesByConversationQuery, SendMessage
 
 
-# QUERIES 
-class Query(graphene.ObjectType):
-    user = graphene.Field(UserType, id=graphene.Int(required=True))
-    me = graphene.Field(UserType)
+class Query(MeQuery, UserByIdQuery, ConversationListQuery, MessagesByConversationQuery, graphene.ObjectType):
+    pass
 
-    def resolve_user(self, info, id):
-        return User.objects.get(pk=id)
-    
-    def resolve_me(self, info):
-        user = info.context.user
-        if user.is_authenticated:
-            return user
-        return None
-    
+
 class Mutation(graphene.ObjectType):
-    token_auth: graphene.Field = graphql_jwt.ObtainJSONWebToken.Field()
-    verify_token: graphene.Field = graphql_jwt.Verify.Field()
-    register_user: graphene.Field = RegisterUser.Field()
+    token_auth = graphql_jwt.ObtainJSONWebToken.Field()
+    verify_token = graphql_jwt.Verify.Field()
+    refresh_token = graphql_jwt.Refresh.Field()
+    register_user = RegisterUser.Field()
+    send_message = SendMessage.Field()
+
 
 schema: graphene.Schema = graphene.Schema(query=Query, mutation=Mutation)

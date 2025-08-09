@@ -51,7 +51,7 @@ class Message(models.Model):
     
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     conversation = models.ForeignKey(Conversation, on_delete=models.CASCADE, related_name='messages')
-    sender = models.CharField(max_length=10, choices=SENDER_CHOICES)
+    sender = models.ForeignKey(User, on_delete=models.CASCADE, related_name='messages')
     content = models.TextField()
     message_type = models.CharField(max_length=10, choices=MESSAGE_TYPE_CHOICES, default='TEXT')
     metadata = models.JSONField(default=dict, blank=True)  # For storing additional data

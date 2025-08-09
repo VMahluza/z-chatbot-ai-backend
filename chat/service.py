@@ -63,23 +63,26 @@ def get_bot_user() -> User | None:
     
 async def save_chat_message(user: User, bot: User, user_message: str, ai_text: str):
     """Save the chat message to the database."""
+
+
     # Conversation
     try:
         conversation = await sync_to_async(Conversation.objects.get)(user=user, is_active=True)
     except Conversation.DoesNotExist:
         conversation = await sync_to_async(Conversation.objects.create)(user=user)
     # User message
-    await sync_to_async(Message.objects.create)(
+    user_msg : Message = await sync_to_async(Message.objects.create)(
         conversation=conversation,
         sender=user,
         content=user_message,
 
     )
     # Bot message
-    await sync_to_async(Message.objects.create)(
+    bot_msg : Message = await sync_to_async(Message.objects.create)(
         conversation=conversation,
         sender=bot,
         content=ai_text,
 
     )
-    return conversation
+
+    print(f"Saved messages: User - {user_msg.content}, Bot - {bot_msg.content}")

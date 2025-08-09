@@ -11,6 +11,7 @@ https://docs.djangoproject.com/en/5.2/ref/settings/
 """
 
 from pathlib import Path
+from datetime import timedelta
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -213,7 +214,20 @@ GRAPHENE = {
     'SCHEMA': 'core.schema.schema',  # You will create this schema file later
     'MIDDLEWARE': [
         'graphql_jwt.middleware.JSONWebTokenMiddleware',
+    'core.graphql.error_middleware.DomainErrorMiddleware',
     ],
+}
+
+# graphql-jwt configuration: adjust lifetimes as needed
+GRAPHQL_JWT = {
+    # Enforce expiration validation
+    "JWT_VERIFY_EXPIRATION": True,
+    # Access token lifetime (short-lived)
+    "JWT_EXPIRATION_DELTA": timedelta(minutes=30),  # increase from default (~5 min)
+    # Allow refresh within this window
+    "JWT_REFRESH_EXPIRATION_DELTA": timedelta(days=7),
+    # Optional: enable long running refresh rotation
+    # "JWT_LONG_RUNNING_REFRESH_TOKEN": True,
 }
 
 # Authentication backends
