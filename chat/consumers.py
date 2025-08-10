@@ -35,18 +35,7 @@ class ChatConsumer(AsyncWebsocketConsumer):
             self.group_name = f"user_{user.id}"
             await self.channel_layer.group_add(self.group_name, self.channel_name)
             # Send last N messages history
-            history = await self._get_recent_messages(user, limit=20)
-            await self.send(json.dumps({
-                'type': 'history',
-                'messages': [
-                    {
-                        'id': str(m.id),
-                        'content': m.content,
-                        'sender': getattr(m.sender, 'username', 'unknown'),
-                        'timestamp': m.timestamp.isoformat(),
-                    } for m in history
-                ]
-            }))
+            await self._send_history(user)
         await self.send(json.dumps({"info": "Connected"}))
 
     async def disconnect(self, close_code):
@@ -74,6 +63,12 @@ class ChatConsumer(AsyncWebsocketConsumer):
                         self.scope['user'] = resolved
                         user = resolved
                         await self.send(json.dumps({'info': 'Authenticated', 'code': 'AUTH_OK'}))
+                        # On late auth, join group & send history once
+                        if not hasattr(self, 'group_name'):
+                            self.group_name = f"user_{user.id}"
+                            await self.channel_layer.group_add(self.group_name, self.channel_name)
+                        if not getattr(self, 'history_sent', False):
+                            await self._send_history(user)
                         if 'message' not in text_data_json:
                             return  # stop if only auth payload
                     else:
@@ -176,3 +171,19 @@ class ChatConsumer(AsyncWebsocketConsumer):
         if not conv:
             return []
         return list(Message.objects.filter(conversation=conv).order_by('-timestamp')[:limit][::-1])
+
+    async def _send_history(self, user: User):
+        history = await self._get_recent_messages(user, limit=20)
+        await self.send(json.dumps({
+            'type': 'history',
+            'messages': [
+                {
+                    'id': str(m.id),
+                    'content': m.content,
+                    'sender': getattr(m.sender, 'username', 'unknown'),
+                    'kind': 'user' if getattr(m.sender, 'id', None) == user.id else 'bot',
+                    'timestamp': m.timestamp.isoformat(),
+                } for m in history
+            ]
+        }))
+        self.history_sent = True
